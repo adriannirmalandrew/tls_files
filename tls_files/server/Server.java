@@ -67,6 +67,7 @@ public class Server {
 		
 		//Multithreaded client handling:
 		ExecutorService threadPool=Executors.newCachedThreadPool();
+		System.out.println("Listening on port " + port);
 		for(;;) {
 			//Accept a connection:
 			SSLSocket tempSock=null;
@@ -79,9 +80,9 @@ public class Server {
 			//Create new ClientHandler:
 			try {
 				if(args.length==3)
-					threadPool.execute(new ClientHandler(tempSock));
+					threadPool.execute(new ClientHandler(args[0], tempSock));
 				else if(args.length==4)
-					threadPool.execute(new ClientHandler(tempSock, args[3]));
+					threadPool.execute(new ClientHandler(args[0], tempSock, args[3]));
 			} catch(NoSuchAlgorithmException n) {
 				System.out.println("Error: SHA-256 hashing algorithm not available, please check your Java installation.");
 				System.exit(1);
