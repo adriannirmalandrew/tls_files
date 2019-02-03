@@ -62,11 +62,17 @@ public class ClientHandler implements Runnable {
 	
 	//Print out error message:
 	private synchronized void printError(String err) {
-		System.out.println("Thread " + Thread.currentThread().getId() + ": " + err);
+		if(err!=null) System.out.println("Thread " + Thread.currentThread().getId() + ": " + err);
 	}
 	
 	private synchronized void printErrorAndDie(String err) {
 		printError(err);
+		try {
+			this.in.close();
+			this.out.close();
+		} catch(IOException I) {
+			//Nothing to see here
+		}
 		Thread.currentThread().interrupt();
 	}
 	
@@ -92,8 +98,11 @@ public class ClientHandler implements Runnable {
 			} catch(IOException o) {
 				printErrorAndDie(o.getMessage());
 			}
-			//Convert request to uppercase:
-			req=req.toUpperCase();
+			//Convert request to uppercase. In case user logs out, exit the loop and print closing message:
+			if(req!=null)
+				req=req.toUpperCase();
+			else
+				break;
 			//Handle a LOGIN request:
 			if(req.equals("LOGIN") && !isClientLoggedIn) {
 				//Check if session requires password:
@@ -132,20 +141,41 @@ public class ClientHandler implements Runnable {
 				//Handle a LIST request:
 				if(req.equals("LIST")) {
 					try {
-						String csvFileList=null;
 						//Open directory at dirPath:
-						//TODO
-						this.out.writeUTF(csvFileList);
+						StringBuffer csvFileList=new StringBuffer();
+						File dir=new File(this.dirPath);
+						//Add files, exclude directories:
+						for(File f: dir.listFiles()) {
+							if(!(f.isDirectory()))
+								csvFileList.append(f + ",");
+						}
+						this.out.writeUTF(csvFileList.toString());
+						this.out.flush();
+						
+						//Wait for "RECV_OK":
+						String resp1=this.in.readUTF();
+						if(resp1.equals("RECV_OK")) {
+							this.out.writeUTF("LIST_OK");
+							this.out.flush();
+						}
+						else {
+							this.out.writeUTF("NO_ACTION");
+							this.out.flush();
+						}
 					} catch(IOException ie) {
 						printErrorAndDie(ie.getMessage());
 					}
 				}
 				//Handle a DLOAD request:
-				
+				else if(req.equals("DLOAD")) {
+					//TODO
+				}
 				//Handle a ULOAD request:
-				
+				else if(req.equals("ULOAD")) {
+					//TODO
+				}
 				//Handle a LOGOUT request:
-				if(req.equals("LOGOUT")) {
+				else if(req.equals("LOGOUT")) {
 					try {
 						printError("Client at " + this.sock.getRemoteSocketAddress() + " logging out.");
 						this.out.writeUTF("LOGOUT_OK");
@@ -156,7 +186,16 @@ public class ClientHandler implements Runnable {
 						printErrorAndDie(ie.getMessage());
 					}
 				}
+				else {
+					try {
+						this.out.writeUTF("NO_ACTION");
+						this.out.flush();
+					} catch(IOException ie) {
+						printErrorAndDie(ie.getMessage());
+					}
+				}
 			}
 		}
+		printErrorAndDie("Connection closed.");
 	}
 }
