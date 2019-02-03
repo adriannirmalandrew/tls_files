@@ -67,3 +67,5 @@ S: DEL_NO_TARGET
 Logout and finish:
 C: LOGOUT
 S: LOGOUT_OK
+
+In case of an invalid request from the client, the server will respond with NO_ACTION
