@@ -1,19 +1,16 @@
 tls_files protocol (S:Server, C:Client):
 
 Greeting (no password):
-S: TLS_FILES
 C: LOGIN
 S: LOGIN_OK
 
-Greeting (password, wrong password. After 3 attempts, the server will cut off your connection):
-S: TLS_FILES
+Greeting (password, wrong password. After this, the server will cut off your connection):
 C: LOGIN
 S: PASSWD
 C: (password string)
 S: LOGIN_BAD
 
 Greeting (password, correct password):
-S: TLS_FILES
 C: LOGIN
 S: PASSWD
 C: (password string)
