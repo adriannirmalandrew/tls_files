@@ -1,0 +1,68 @@
+tls_files protocol (S:Server, C:Client):
+
+Greeting (no password):
+S: TLS_FILES
+C: LOGIN
+S: LOGIN_OK
+
+Greeting (password, wrong password. After 3 attempts, the server will cut off your connection):
+S: TLS_FILES
+C: LOGIN
+S: PASSWD
+C: (password string)
+S: LOGIN_BAD
+
+Greeting (password, correct password):
+S: TLS_FILES
+C: LOGIN
+S: PASSWD
+C: (password string)
+S: LOGIN_OK
+
+Show list of files:
+C: LIST
+S: (comma-delimited list of files in directory)
+C: RECV_OK
+S: LIST_OK
+
+Download a file (file exists):
+C: DLOAD
+S: FNAME
+C: (file name)
+S: FNAME_OK
+C: RECV
+S: (file data, encoded as base64)
+C: RECV_OK
+S: DLOAD_OK
+
+Download a file (file does not exist):
+C: DLOAD
+S: FNAME
+C: (file name)
+S: DLOAD_NO_TARGET
+
+Upload a file (file does not already exist):
+C: ULOAD
+S: FNAME
+C: (file name)
+S: FNAME_OK
+C: (file data, encoded as base64)
+S: ULOAD_OK
+
+Upload a file (file already exists):
+C: ULOAD
+S: FNAME
+C: (file name)
+S: FNAME_CONFLICT
+
+Delete a file (file exists):
+C: DEL
+S: FNAME
+C: (file name)
+S: DEL_OK
+
+Delete a file (file does not exist):
+C: DEL
+S: FNAME
+C: (file name)
+S: DEL_NO_TARGET
