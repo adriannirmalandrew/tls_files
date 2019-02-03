@@ -13,8 +13,6 @@ public class ClientHandler implements Runnable {
 	//Directory path:
 	private String dirPath=null;
 	
-	//System time, used as salt for password:
-	private String salt=null;
 	//Hash of server password+salt:
 	private String passHash64=null;
 	
@@ -32,12 +30,8 @@ public class ClientHandler implements Runnable {
 		//Create hasher256:
 		this.hasher256=MessageDigest.getInstance("SHA-256");
 		
-		//Get system time:
-		this.salt=String.valueOf(System.currentTimeMillis());
-		//Bytes in password+salt:
-		byte[] pass=passw.concat(this.salt).getBytes();
 		//Hash pass:
-		byte[] passHash=this.hasher256.digest(pass);
+		byte[] passHash=this.hasher256.digest(passw.getBytes());
 		//Encode hash:
 		this.passHash64=Base64.getEncoder().encodeToString(passHash);
 		
@@ -47,10 +41,9 @@ public class ClientHandler implements Runnable {
 	
 	//Check if password is valid:
 	private boolean checkPassword(String pa) {
-		String tempPass=pa.concat(this.salt);
-		byte[] tempHash=this.hasher256.digest(tempPass.getBytes());
+		byte[] tempHash=this.hasher256.digest(pa.getBytes());
 		String tempHash64=Base64.getEncoder().encodeToString(tempHash);
-		if(tempHash.equals(this.passHash64))
+		if(tempHash64.equals(this.passHash64))
 			return true;
 		else
 			return false;
@@ -121,7 +114,8 @@ public class ClientHandler implements Runnable {
 					try {
 						this.out.writeUTF("PASSWD");
 						//Check password:
-						if(this.checkPassword(this.in.readUTF())) {
+						String p=this.in.readUTF();
+						if(this.checkPassword(p)) {
 							this.out.writeUTF("LOGIN_OK");
 							printError("Client at " + this.sock.getRemoteSocketAddress() + " logged in.");
 							isClientLoggedIn=true;
