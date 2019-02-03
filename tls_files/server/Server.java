@@ -10,13 +10,17 @@ import java.util.concurrent.*;
 public class Server {
 	public static void main(String[] args) {
 		//Check arguments:
-		if(args.length!=3) {
-			System.out.println("Usage: Server <folder> <port> <keystore>");
+		if(args.length<3) {
+			System.out.println("Usage: Server folder port keystore [password]");
 			System.exit(1);
 		}
 		
 		//Save port number:
 		final int port=Integer.valueOf(args[1]);
+		
+		//Print warning if no password is given:
+		if(args.length==3)
+			System.out.println("Warning: No password provided. All connections will be accepted.");
 		
 		//Open folder:
 		System.out.println("Checking directory...");
@@ -73,7 +77,15 @@ public class Server {
 				continue;
 			}
 			//Create new ClientHandler:
-			threadPool.execute(new ClientHandler(tempSock));
+			try {
+				if(args.length==3)
+					threadPool.execute(new ClientHandler(tempSock));
+				else if(args.length==4)
+					threadPool.execute(new ClientHandler(tempSock, args[3]));
+			} catch(NoSuchAlgorithmException n) {
+				System.out.println("Error: SHA-256 hashing algorithm not available, please check your Java installation.");
+				System.exit(1);
+			}
 		}
 	}
 }
