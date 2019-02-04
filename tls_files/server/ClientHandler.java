@@ -186,7 +186,7 @@ public class ClientHandler implements Runnable {
 								FileInputStream fin=new FileInputStream(tempFile);
 								fin.read(tempFileBytes, 0, fLen);
 								//Encode to base64:
-								String tempFile64=Base64.getEncoder().encodeToString(tempFileBytes);
+								String tempFile64=new String(Base64.getEncoder().encode(tempFileBytes), "UTF-8");
 								//Send data:
 								this.out.writeUTF(tempFile64);
 								this.out.flush();
@@ -215,7 +215,45 @@ public class ClientHandler implements Runnable {
 				}
 				//Handle a ULOAD request:
 				else if(req.equals("ULOAD")) {
-					//TODO
+					try {
+						//Request file name:
+						this.out.writeUTF("FNAME");
+						this.out.flush();
+						//Read file name:
+						String tempPath=this.dirPath + "/" + this.in.readUTF();
+						File tempFile=new File(tempPath);
+						//Check if file exists:
+						if(tempFile.exists()) {
+							this.out.writeUTF("FNAME_CONFLICT");
+							this.out.flush();
+							continue;
+						}
+						//Receive file data (encoded as Base64):
+						this.out.writeUTF("FNAME_OK");
+						this.out.flush();
+						String tempData64=this.in.readUTF();
+						//Decode data:
+						byte[] tempData=Base64.getDecoder().decode(tempData64.trim().getBytes("UTF-8"));
+						//Write data to disk:
+						FileOutputStream fout=new FileOutputStream(tempFile);
+						try {
+							fout.write(tempData);
+						} catch(IOException e1) {
+							//In case of error:
+							this.out.writeUTF("ULOAD_BAD");
+							this.out.flush();
+							continue;
+						}
+						//Say everything went ok:
+						this.out.writeUTF("ULOAD_OK");
+						this.out.flush();
+					} catch(IOException ie) {
+						printErrorAndDie(ie.getMessage());
+					}
+				}
+				//Handle a DEL request:
+				else if(req.equals("DEL")) {
+					
 				}
 				//Handle a LOGOUT request:
 				else if(req.equals("LOGOUT")) {
