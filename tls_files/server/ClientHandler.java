@@ -162,7 +162,56 @@ public class ClientHandler implements Runnable {
 				}
 				//Handle a DLOAD request:
 				else if(req.equals("DLOAD")) {
-					//TODO
+					try {
+						//Request file name:
+						this.out.writeUTF("FNAME");
+						this.out.flush();
+						//Open requested file:
+						String tempPath=this.dirPath + "/" + this.in.readUTF();
+						File tempFile=new File(tempPath);
+						printError(tempPath);
+						if(!tempFile.exists()) {
+							this.out.writeUTF("DLOAD_NO_TARGET");
+							this.out.flush();
+						}
+						else {
+							this.out.writeUTF("FNAME_OK");
+							this.out.flush();
+							//Wait for "RECV":
+							String rep1=this.in.readUTF();
+							if(rep1.equals("RECV")) {
+								//Read file data:
+								int fLen=(int)tempFile.length();
+								byte[] tempFileBytes=new byte[fLen];
+								FileInputStream fin=new FileInputStream(tempFile);
+								fin.read(tempFileBytes, 0, fLen);
+								//Encode to base64:
+								String tempFile64=Base64.getEncoder().encodeToString(tempFileBytes);
+								//Send data:
+								this.out.writeUTF(tempFile64);
+								this.out.flush();
+								//Wait for RECV_OK:
+								rep1=this.in.readUTF();
+								if(rep1.equals("RECV_OK")) {
+									this.out.writeUTF("DLOAD_OK");
+									this.out.flush();
+									continue;
+								}
+								else {
+									this.out.writeUTF("NO_ACTION");
+									this.out.flush();
+									continue;
+								}
+							}
+							else {
+								this.out.writeUTF("NO_ACTION");
+								this.out.flush();
+								continue;
+							}
+						}
+					} catch(Exception ie) {
+						printErrorAndDie(ie.getMessage());
+					}
 				}
 				//Handle a ULOAD request:
 				else if(req.equals("ULOAD")) {
