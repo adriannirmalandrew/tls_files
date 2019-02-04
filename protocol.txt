@@ -45,6 +45,7 @@ C: (file name)
 S: FNAME_OK
 C: (file data, encoded as base64)
 S: ULOAD_OK
+In case of error while writing data, S: ULOAD_BAD
 
 Upload a file (file already exists):
 C: ULOAD
