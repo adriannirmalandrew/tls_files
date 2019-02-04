@@ -3,7 +3,7 @@ A simple, multithreaded file server written in Java, which utilizes TLS.
 
 Current status: Alpha. File upload functionality missing (for now).
 
-Instructions for running server:
+**Instructions for running server:**
 
 Server <directory> <portno> <tls_keystore> <password>
   
@@ -15,4 +15,4 @@ Server <directory> <portno> <tls_keystore> <password>
   
   password (optional) - Password for login.
   
-The client I will be writing won't have automatic SSL certificate retrieval, so the certificate will have to be manually loaded.
+The client I will be writing **won't** have automatic SSL certificate retrieval, so the certificate will have to be manually loaded.
