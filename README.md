@@ -1,8 +1,6 @@
 # tls_files
 A simple, multithreaded file server written in Java, which utilizes TLS.
 
-Current status: Beta. GUI client in the works.
-
 **Instructions for running server:**
 
 Server <directory> <portno> <tls_keystore> <password>
