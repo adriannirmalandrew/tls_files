@@ -14,7 +14,7 @@ public class Client {
 		//Port number:
 		final int portno=Integer.valueOf(args[1]);
 		//SSLSocketCreator:
-		SSLSocketCreator soc=new SSLSocketCreator(args[2], "TLS", args[0], portno);
+		SSLSocketCreator soc=new SSLSocketCreator(args[2], "TLSv1.2", args[0], portno);
 		
 		//Get TrustStore password:
 		System.out.print("Enter password for truststore: ");
@@ -84,9 +84,74 @@ public class Client {
 			System.exit(1);
 		}
 		
+		String ch=null;
 		//Get user requests:
 		for(;;) {
-			
+			//Read action:
+			System.out.println("1. List files\n2. Download a file\n3. Upload a file\n4. Exit\nEnter option: ");
+			ch=con.readLine();
+			//Perform action:
+			try {
+				switch(Integer.valueOf(ch)) {
+					//List files:
+					case(1): {
+						//Send LIST request:
+						out.writeUTF("LIST");
+						out.flush();
+						//Read comma-delimited list:
+						System.out.println("Receiving data...");
+						String csvFileList=in.readUTF();
+						
+						//Send response:
+						out.writeUTF("RECV_OK");
+						out.flush();
+						reply=in.readUTF();
+						//Make sure our connection is still good:
+						if(!reply.equals("LIST_OK")) throw new IOException("Invalid response from server!");
+						
+						//Parse and display list:
+						int noOfFiles=0;
+						StringTokenizer par=new StringTokenizer(csvFileList, ",");
+						while(par.hasMoreTokens()) {
+							//Print 2 file names in a line:
+							System.out.print(par.nextToken() + '\t');
+							++noOfFiles;
+							if(noOfFiles%2==0) System.out.println("");
+						}
+						System.out.println("\n");
+					}
+					//Download a file:
+					case(2): {
+						
+					}
+					//Upload a file:
+					case(3): {
+						
+					}
+					//Logout:
+					case(4): {
+						System.out.println("Logging out...");
+						//Send LOGOUT request:
+						out.writeUTF("LOGOUT");
+						out.flush();
+						//Make sure our connection is still good:
+						reply=in.readUTF();
+						if(!reply.equals("LOGOUT_OK")) throw new IOException("Invalid response from server!");
+						//Exit:
+						in.close();
+						out.close();
+						System.out.println("Exiting...");
+						System.exit(0);
+					}
+				}
+			} catch(IOException e) {
+				System.out.println("Communication error: " + e.getMessage());
+				try {
+					in.close();
+					out.close();
+				} catch(IOException e1) {}
+				System.exit(1);
+			}
 		}
 	}
 }
