@@ -4,6 +4,12 @@ import java.util.*;
 import java.io.*;
 import javax.net.ssl.*;
 
+class BadResponseException extends IOException {
+	public String getMessage() {
+		return new String("Invalid response from server!");
+	}
+}
+
 public class Client {
 	public static void main(String[] args) {
 		//Check arguments:
@@ -68,7 +74,7 @@ public class Client {
 				if(reply.equals("LOGIN_BAD"))
 					throw new IOException("Incorrect password!");
 				else if(!reply.equals("LOGIN_OK"))
-					throw new IOException("Invalid server response!");
+					throw new BadResponseException();
 			}
 			else if(!reply.equals("LOGIN_OK"))
 				throw new IOException("Invalid server response!");
@@ -88,7 +94,7 @@ public class Client {
 		//Get user requests:
 		for(;;) {
 			//Read action:
-			System.out.println("1. List files\n2. Download a file\n3. Upload a file\n4. Exit\nEnter option: ");
+			System.out.print("1. List files\n2. Download a file\n3. Upload a file\n4. Exit\nEnter option: ");
 			ch=con.readLine();
 			//Perform action:
 			try {
@@ -107,7 +113,7 @@ public class Client {
 						out.flush();
 						reply=in.readUTF();
 						//Make sure our connection is still good:
-						if(!reply.equals("LIST_OK")) throw new IOException("Invalid response from server!");
+						if(!reply.equals("LIST_OK")) throw new BadResponseException();
 						
 						//Parse and display list:
 						int noOfFiles=0;
@@ -119,10 +125,67 @@ public class Client {
 							if(noOfFiles%2==0) System.out.println("");
 						}
 						System.out.println("\n");
+						break;
 					}
 					//Download a file:
 					case(2): {
+						//Send DLOAD request:
+						out.writeUTF("DLOAD");
+						out.flush();
+						//Get reply:
+						reply=in.readUTF();
+						if(!reply.equals("FNAME")) throw new BadResponseException();
 						
+						//Get and send filename:
+						System.out.print("Enter file name: ");
+						String fileName=con.readLine();
+						out.writeUTF(fileName);
+						out.flush();
+						System.out.println("Requesting...");
+						
+						//Get and handle reply:
+						reply=in.readUTF();
+						if(reply.equals("DLOAD_NO_TARGET")) {
+							System.out.println("Invalid filename!");
+							continue;
+						}
+						else if(!reply.equals("FNAME_OK")) throw new BadResponseException();
+						
+						//Receive base64-encoded file data:
+						out.writeUTF("RECV");
+						System.out.print("Receiving data...");
+						String fileData64=in.readUTF();
+						System.out.print("done\n");
+						out.writeUTF("RECV_OK");
+						reply=in.readUTF();
+						if(!reply.equals("DLOAD_OK")) throw new BadResponseException();
+						
+						//Get destination path from user:
+						String destPath=con.readLine();
+						File dest=new File(destPath);
+						//Check if file exists:
+						if(dest.exists()) {
+							System.out.println("File already exists. Overwrite? [y/N]: ");
+							char ch1=con.readLine().charAt(0);
+							if(!(ch1=='y' || ch1=='Y')) {
+								System.out.println("Discarding file data...");
+								fileData64=null;
+								continue;
+							}
+							else dest.delete();
+						}
+						
+						//Create target file:
+						dest.createNewFile();
+						//Decode downloaded data:
+						byte[] fileData=Base64.getDecoder().decode(fileData64);
+						//Write data to dest:
+						FileOutputStream destOut=new FileOutputStream(dest);
+						System.out.print("Writing file...");
+						destOut.write(fileData);
+						System.out.println("done\n");
+						destOut.close();
+						break;
 					}
 					//Upload a file:
 					case(3): {
@@ -137,6 +200,7 @@ public class Client {
 						//Make sure our connection is still good:
 						reply=in.readUTF();
 						if(!reply.equals("LOGOUT_OK")) throw new IOException("Invalid response from server!");
+						
 						//Exit:
 						in.close();
 						out.close();
