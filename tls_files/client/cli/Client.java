@@ -94,7 +94,7 @@ public class Client {
 		//Get user requests:
 		for(;;) {
 			//Read action:
-			System.out.print("1. List files\n2. Download a file\n3. Upload a file\n4. Exit\nEnter option: ");
+			System.out.print("1. List files\n2. Download a file\n3. Upload a file\n4. Delete a file\n5. Exit\nEnter option: ");
 			ch=con.readLine();
 			//Perform action:
 			try {
@@ -161,6 +161,7 @@ public class Client {
 						if(!reply.equals("DLOAD_OK")) throw new BadResponseException();
 						
 						//Get destination path from user:
+						System.out.print("Save file as: ");
 						String destPath=con.readLine();
 						File dest=new File(destPath);
 						//Check if file exists:
@@ -189,17 +190,76 @@ public class Client {
 					}
 					//Upload a file:
 					case(3): {
+						//Send ULOAD request:
+						out.writeUTF("ULOAD");
+						out.flush();
+						//Get reply:
+						reply=in.readUTF();
+						if(!reply.equals("FNAME")) throw new BadResponseException();
 						
+						//Get file name:
+						System.out.print("Enter file name to save as: ");
+						String fileName=con.readLine();
+						//Send file name:
+						out.writeUTF(fileName);
+						out.flush();
+						//Server checks if file already exists:
+						reply=in.readUTF();
+						if(reply.equals("FNAME_CONFLICT")) {
+							System.out.println("File already exists, canceling...\n");
+							continue;
+						}
+						else if(!reply.equals("FNAME_OK")) throw new BadResponseException();
+						
+						//Get file name:
+						System.out.print("Enter name of source file: ");
+						String upName=con.readLine();
+						File upFile=new File(upName);
+						//If file does not exist, cancel the operation:
+						if(!upFile.exists()) {
+							out.writeUTF("CANCEL");
+							out.flush();
+							System.out.println("File does not exist, canceling upload...");
+							continue;
+						}
+						//Open file and read:
+						System.out.print("Reading file...");
+						FileInputStream upIn=new FileInputStream(upFile);
+						byte[] upData=upIn.readAllBytes();
+						System.out.print("done\n");
+						//Encode data:
+						System.out.print("Encoding...");
+						String upData64=Base64.getEncoder().encodeToString(upData);
+						System.out.print("done\n");
+						
+						//Send data:
+						System.out.print("Sending...");
+						out.writeUTF(upData64);
+						out.flush();
+						//Get reply:
+						reply=in.readUTF();
+						if(reply.equals("ULOAD_BAD")) {
+							System.out.println("\nThe server encountered an error, canceling...\n");
+							continue;
+						}
+						else if(!reply.equals("ULOAD_OK")) throw new BadResponseException();
+						System.out.print("done\n\n");
+						break;
+					}
+					//Delete a file:
+					case(4): {
+						
+						break;
 					}
 					//Logout:
-					case(4): {
+					case(5): {
 						System.out.println("Logging out...");
 						//Send LOGOUT request:
 						out.writeUTF("LOGOUT");
 						out.flush();
 						//Make sure our connection is still good:
 						reply=in.readUTF();
-						if(!reply.equals("LOGOUT_OK")) throw new IOException("Invalid response from server!");
+						if(!reply.equals("LOGOUT_OK")) throw new BadResponseException();
 						
 						//Exit:
 						in.close();
