@@ -166,7 +166,7 @@ public class Client {
 						File dest=new File(destPath);
 						//Check if file exists:
 						if(dest.exists()) {
-							System.out.println("File already exists. Overwrite? [y/N]: ");
+							System.out.print("File already exists. Overwrite? [y/N]: ");
 							char ch1=con.readLine().charAt(0);
 							if(!(ch1=='y' || ch1=='Y')) {
 								System.out.println("Discarding file data...");
@@ -238,17 +238,36 @@ public class Client {
 						out.flush();
 						//Get reply:
 						reply=in.readUTF();
-						if(reply.equals("ULOAD_BAD")) {
+						if(reply.equals("ULOAD_BAD"))
 							System.out.println("\nThe server encountered an error, canceling...\n");
-							continue;
-						}
-						else if(!reply.equals("ULOAD_OK")) throw new BadResponseException();
-						System.out.print("done\n\n");
+						else if(!reply.equals("ULOAD_OK"))
+							throw new BadResponseException();
+						else
+							System.out.print("done\n\n");
 						break;
 					}
 					//Delete a file:
 					case(4): {
+						//Send DEL request:
+						out.writeUTF("DEL");
+						out.flush();
+						reply=in.readUTF();
+						if(!reply.equals("FNAME")) throw new BadResponseException();
 						
+						//Get file name to be deleted:
+						System.out.print("Enter name of file to be deleted: ");
+						String delFile=con.readLine();
+						
+						//Send file name:
+						System.out.println("Requesting...");
+						out.writeUTF(delFile);
+						reply=in.readUTF();
+						if(reply.equals("DEL_NO_TARGET"))
+							System.out.println("File does not exist!");
+						else if(!reply.equals("DEL_OK"))
+							throw new BadResponseException();
+						else
+							System.out.println("Done\n");
 						break;
 					}
 					//Logout:
